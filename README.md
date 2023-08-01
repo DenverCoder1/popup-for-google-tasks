@@ -4,7 +4,7 @@
 
 ## Installation
 
-This extension requires a Chromium-based browser that supports manifest v2 (eg. [Brave](https://brave.com/))
+This extension requires Chrome or a Chromium-based browser such as Brave.
 
 1. Clone this repository
 2. Go to `chrome://extensions/`

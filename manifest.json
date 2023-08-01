@@ -1,11 +1,11 @@
 {
-    "manifest_version": 2,
+    "manifest_version": 3,
     "offline_enabled": false,
     "name": "Popup for Google Tasks",
     "description": "Opens Google Tasks in a popup window.",
     "version": "1.0.0",
     "author": "Jonah Lawrence",
-    "browser_action": {
+    "action": {
         "default_icon": "images/icon-128.png",
         "default_popup": "popup.html",
         "default_title": "Popup for Google Tasks"
@@ -13,5 +13,6 @@
     "icons": {
         "128": "images/icon-128.png"
     },
-    "permissions": ["cookies", "https://tasks.google.com/*"]
+    "permissions": ["cookies"],
+    "host_permissions": ["https://tasks.google.com/*"]
 }
