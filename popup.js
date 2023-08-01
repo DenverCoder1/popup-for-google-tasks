@@ -1,47 +1,28 @@
-/**
- * Set a cookie for the current popup window ID
- *
- * @param {string} url The url for setting the cookie
- * @param {number} windowId The id of the popup window
- * @returns {Promise} A promise that resolves when the cookie is set
- */
-function setWindowIdCookie(url, windowId) {
-    return new Promise(function (resolve, reject) {
-        chrome.cookies.set(
-            {
-                url,
-                name: "windowId",
-                value: windowId.toString(),
-            },
-            function (cookie) {
-                if (cookie) {
-                    resolve(cookie);
-                } else {
-                    reject(new Error("Failed to set windowId cookie"));
-                }
-            }
-        );
-    });
-}
+const BROWSER = typeof browser === "undefined" ? chrome : browser;
+const POPUP_URL = "https://tasks.google.com/embed/?origin=https://calendar.google.com&fullWidth=1";
+const DOMAIN = "https://tasks.google.com";
+const POPUP_WIDTH = 380;
 
 /**
- * Get the current popup window id from the cookie
+ * Get the current popup window id matching the domain
  *
- * @param {string} url The url for getting the cookie
- * @returns {Promise} A promise that resolves when the cookie is retrieved
- * @resolves {number|null} Window ID or null if not found
+ * @param {string} domain The domain to match in the popup window url
+ * @returns {Promise} A promise that resolves when the popup window id is found
+ * @resolves {number|null} The popup window id or null if not found
  */
-function getWindowIdCookie(url) {
+function getOpenWindowId(domain) {
     return new Promise(function (resolve) {
-        chrome.cookies.get(
-            {
-                url,
-                name: "windowId",
-            },
-            function (cookie) {
-                resolve(cookie ? parseInt(cookie.value) : null);
-            }
-        );
+        BROWSER.windows.getAll({ populate: true, windowTypes: ["popup"] }).then((windows) => {
+            let windowId = null;
+            windows.forEach((window) => {
+                window.tabs.forEach((tab) => {
+                    if (tab.url.includes(domain) || tab.url.includes(encodeURIComponent(domain))) {
+                        windowId = window.id;
+                    }
+                });
+            });
+            resolve(windowId);
+        });
     });
 }
 
@@ -51,27 +32,19 @@ function getWindowIdCookie(url) {
  * @param {string} url The url for opening the popup window
  * @returns {Promise} A promise that resolves when the popup window is created
  * @resolves {object} The popup window object
- * @rejects {Error} An error if the popup window fails to open
  */
 function openPopup(url) {
-    return new Promise(function (resolve, reject) {
-        const POPUP_WIDTH = 380;
-        chrome.windows.create(
-            {
+    return new Promise(function (resolve) {
+        BROWSER.windows
+            .create({
                 url,
                 type: "popup",
                 width: POPUP_WIDTH,
                 height: screen.height,
                 left: screen.width - POPUP_WIDTH,
                 top: 0,
-                focused: true,
-            },
-            function (popupWindow) {
-                setWindowIdCookie(url, popupWindow.id)
-                    .then(() => resolve(popupWindow))
-                    .catch((error) => reject(error));
-            }
-        );
+            })
+            .then((popupWindow) => resolve(popupWindow));
     });
 }
 
@@ -83,17 +56,17 @@ function openPopup(url) {
  * @resolves {object} The popup window object
  * @rejects {Error} An error if the popup window fails to open or create
  */
-function openOrCreatePopup(url) {
+function openOrCreatePopup(url, domain) {
     return new Promise(function (resolve, reject) {
-        getWindowIdCookie(url).then((windowId) => {
+        getOpenWindowId(domain).then((windowId) => {
             if (windowId === null) {
                 openPopup(url)
                     .then((popupWindow) => resolve(popupWindow))
                     .catch((error) => reject(error));
                 return;
             }
-            chrome.windows.update(windowId, { focused: true }, function (popupWindow) {
-                if (chrome.runtime.lastError) {
+            BROWSER.windows.update(windowId, { focused: true }, function (popupWindow) {
+                if (BROWSER.runtime.lastError) {
                     // popup window doesn't exist anymore, create a new one
                     openPopup(url)
                         .then((popupWindow) => resolve(popupWindow))
@@ -109,8 +82,7 @@ function openOrCreatePopup(url) {
 document.addEventListener(
     "DOMContentLoaded",
     function () {
-        const url = "https://tasks.google.com/embed/?origin=https://calendar.google.com&fullWidth=1";
-        openOrCreatePopup(url).then(() => window.close());
+        openOrCreatePopup(POPUP_URL, DOMAIN).then(() => window.close());
     },
     false
 );

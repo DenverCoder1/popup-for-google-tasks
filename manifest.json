@@ -13,6 +13,6 @@
     "icons": {
         "128": "images/icon-128.png"
     },
-    "permissions": ["cookies"],
+    "permissions": ["tabs"],
     "host_permissions": ["https://tasks.google.com/*"]
 }
