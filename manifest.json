@@ -13,5 +13,5 @@
     "icons": {
         "128": "images/icon-128.png"
     },
-    "permissions": ["system.display", "cookies", "https://tasks.google.com/*"]
+    "permissions": ["cookies", "https://tasks.google.com/*"]
 }
