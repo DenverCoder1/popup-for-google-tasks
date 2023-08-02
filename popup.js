@@ -1,17 +1,17 @@
 const BROWSER = typeof browser === "undefined" ? chrome : browser;
 const POPUP_URL = "https://tasks.google.com/embed/?origin=https://calendar.google.com&fullWidth=1";
-const DOMAIN = "https://tasks.google.com";
 const POPUP_WIDTH = 380;
 
 /**
  * Get the current popup window id matching the domain
  *
- * @param {string} domain The domain to match in the popup window url
+ * @param {string} url The url with the domain to match in the popup window url
  * @returns {Promise} A promise that resolves when the popup window id is found
  * @resolves {number|null} The popup window id or null if not found
  */
-function getOpenWindowId(domain) {
+function getOpenWindowId(url) {
     return new Promise(function (resolve) {
+        const domain = new URL(url).hostname;
         BROWSER.windows.getAll({ populate: true, windowTypes: ["popup"] }).then((windows) => {
             let windowId = null;
             windows.forEach((window) => {
@@ -54,27 +54,15 @@ function openPopup(url) {
  * @param {string} url The url for opening the popup window
  * @returns {Promise} A promise that resolves when the popup window is opened or created
  * @resolves {object} The popup window object
- * @rejects {Error} An error if the popup window fails to open or create
  */
-function openOrCreatePopup(url, domain) {
-    return new Promise(function (resolve, reject) {
-        getOpenWindowId(domain).then((windowId) => {
+function openOrCreatePopup(url) {
+    return new Promise(function (resolve) {
+        getOpenWindowId(url).then((windowId) => {
             if (windowId === null) {
-                openPopup(url)
-                    .then((popupWindow) => resolve(popupWindow))
-                    .catch((error) => reject(error));
+                openPopup(url).then((popupWindow) => resolve(popupWindow));
                 return;
             }
-            BROWSER.windows.update(windowId, { focused: true }, function (popupWindow) {
-                if (BROWSER.runtime.lastError) {
-                    // popup window doesn't exist anymore, create a new one
-                    openPopup(url)
-                        .then((popupWindow) => resolve(popupWindow))
-                        .catch((error) => reject(error));
-                } else {
-                    resolve(popupWindow);
-                }
-            });
+            BROWSER.windows.update(windowId, { focused: true }).then((popupWindow) => resolve(popupWindow));
         });
     });
 }
@@ -82,7 +70,7 @@ function openOrCreatePopup(url, domain) {
 document.addEventListener(
     "DOMContentLoaded",
     function () {
-        openOrCreatePopup(POPUP_URL, DOMAIN).then(() => window.close());
+        openOrCreatePopup(POPUP_URL).then(() => window.close());
     },
     false
 );

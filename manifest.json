@@ -3,7 +3,7 @@
     "offline_enabled": false,
     "name": "Popup for Google Tasks",
     "description": "Opens Google Tasks in a popup window.",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "author": "Jonah Lawrence",
     "action": {
         "default_icon": "images/icon-128.png",
